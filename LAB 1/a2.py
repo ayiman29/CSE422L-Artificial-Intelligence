@@ -58,7 +58,7 @@ distance = dijkstra(graph, goal)
 
 def admissible(heuristics, distance):
     for i in range(1, n+1):
-        if heuristic[i] > distance[i]:
+        if heuristics[i] > distance[i]:
             return 0
     return 1
 
