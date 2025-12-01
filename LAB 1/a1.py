@@ -1,6 +1,6 @@
 from queue import PriorityQueue
 
-n, m = 15, 15
+n , m = 15, 15
 root = (1, 0)
 goal = (13, 14)
 
@@ -43,7 +43,9 @@ def astar(grid, n, m, root, goal):
     q.put((0 + f(root, goal), root))
 
     
-    while q.qsize() > 0:
+    while True:
+        if q.qsize() <= 0:
+            return -1
         _, curr = q.get()
         x, y = curr
 
@@ -90,6 +92,30 @@ def astar(grid, n, m, root, goal):
                 parent[right] = curr
 
 
-cost, parent = astar(grid, n, m, root, goal)
+ret = astar(grid, n, m, root, goal)
+if ret == -1:
+    print(-1)
+else:
+    cost, parent = ret
 
-print(cost, parent)
+    curr = goal
+    direction = []
+    while True:
+        par = parent[curr]
+        if par == None:
+            break
+        px, py = par
+        cx, cy = curr
+
+        if cx == px + 1:
+            direction.append("D")
+        elif cx == px - 1:
+            direction.append("U")
+        elif cy == py + 1:
+            direction.append("R")
+        elif cy == py - 1:
+            direction.append("L")
+
+        curr = par
+
+    print("".join(direction[::-1]))
