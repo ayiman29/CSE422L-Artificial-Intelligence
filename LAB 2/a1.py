@@ -1,0 +1,206 @@
+import math
+import random
+size_d = {"alu": (5,5), "cache": (7,4), "control": (4,4), "register": (6,6), "decoder": (5,3), "floating": (5,5)}
+def ga(population, iteration=1):
+    best = None
+    for i in range(iteration):
+        fitness = f(population)
+        temp, sectemp = find_best(fitness)
+        if best == None or (best['fitness'] < temp['fitness']):
+            best = temp
+        r1 = random.randint(0, len(population) - 1)
+        r2 = r1
+        while r2 == r1:
+            r2 = random.randint(0, len(population) - 1)
+        r3 = r2
+        while r3 == r2 or r3 == r1:
+            r3 = random.randint(0, len(population) - 1)
+        r4 = r3
+        while r4 == r3 or r4 == r2 or r4 == r1:
+            r4 = random.randint(0, len(population) - 1)
+
+        p1 = population[r1]
+        p2 = population[r2]
+        p3 = population[r3]
+        p4 = population[r4]
+        point = random.randint(1, len(p1) - 1)
+        c1 = p1[0:point] + p2[point::]
+        c2 = p2[0:point] + p1[point::]
+        c3 = p3[0:point] + p4[point::]
+        c4 = p4[0:point] + p3[point::]
+        
+        mutation_rate = 5  
+
+        if random.randint(1, 100) <= mutation_rate:
+            c1[random.randint(0, len(c1) - 1)] = (random.randint(0, 25), random.randint(0, 25))
+
+        if random.randint(1, 100) <= mutation_rate:
+            c2[random.randint(0, len(c2) - 1)] = (random.randint(0, 25), random.randint(0, 25))
+
+        if random.randint(1, 100) <= mutation_rate:
+            c3[random.randint(0, len(c3) - 1)] = (random.randint(0, 25), random.randint(0, 25))
+
+        if random.randint(1, 100) <= mutation_rate:
+            c4[random.randint(0, len(c4) - 1)] = (random.randint(0, 25), random.randint(0, 25))
+
+        c5 = temp['chromo']
+        c6 = sectemp['chromo']
+        population = [c1, c2, c3, c4, c5, c6]
+    
+    return best
+
+
+def find_best(fitness_list):
+    best = None
+    second_best = None
+    max_fit = float('-inf')
+    second_max_fit = float('-inf')
+
+    for f in fitness_list:
+        fit = f['fitness']
+        if fit > max_fit:
+            second_best = best
+            second_max_fit = max_fit
+            best = f
+            max_fit = fit
+        elif fit > second_max_fit:
+            second_best = f
+            second_max_fit = fit
+
+    return best, second_best
+
+
+def f(population):
+    fit = []
+    # ALU --> Cache --> Control Unit --> Register File --> Decoder --> Floating Unit
+    # (9,3), (12, 15), (13, 16), (1,13), (4,15), (9, 6)
+    #{"alu": (5,5), "cache": (7,4), "control": (4,4), "register": (6,6), "decoder": (5,3), "floating": (5,5)}
+
+    for chromo in population:
+        items = breakdown(chromo)
+        wiring_dist = (
+            dist(items, 'register', 'alu') +
+            dist(items, 'control','alu') +
+            dist(items, 'alu', 'cache') +
+            dist(items, 'register', 'floating') +
+            dist(items, 'cache', 'decoder') +
+            dist(items,'decoder', 'floating')
+        )
+        area = bounded_area(items)
+        overlap = overlap_count(items)
+        fitness_value = -((1000 * overlap) + (2 * wiring_dist) + area)
+
+        fit.append({
+            "chromo": chromo,
+            "fitness": fitness_value,
+            "wiring": wiring_dist,
+            "area": area,
+            "overlap": overlap
+        })
+
+    return fit
+
+
+
+def overlap_count(items):
+    visited = set()
+    overlap = 0
+
+    for k1, A in items.items():
+        visited.add(k1)
+
+        for k2, B in items.items():
+            if k2 in visited:
+                continue
+
+            A_left   = min(x for x, y in A)
+            A_right  = max(x for x, y in A)
+            A_bottom = min(y for x, y in A)
+            A_top    = max(y for x, y in A)
+            B_left   = min(x for x, y in B)
+            B_right  = max(x for x, y in B)
+            B_bottom = min(y for x, y in B)
+            B_top    = max(y for x, y in B)
+
+
+            if not (A_right <= B_left or  
+                    A_left >= B_right or 
+                    A_top <= B_bottom or  
+                    A_bottom >= B_top):  
+                overlap += 1
+
+    return overlap
+
+
+def dist(items, item1, item2):
+    bottom_left1 = items[item1][0]
+    bottom_right1 = items[item1][1]
+    top_left1 = items[item1][2]
+    bottom_right1 = items[item1][3]
+    bottom_left2 = items[item2][0]
+    bottom_right2 = items[item2][1]
+    top_left2 = items[item2][2]
+    bottom_right2 = items[item2][3]
+    center1 = (bottom_left1[0] + (size_d[item1][0] / 2), bottom_left1[1] + (size_d[item1][1] / 2))
+    center2 = (bottom_left2[0] + (size_d[item2][0] / 2), bottom_left2[1] + (size_d[item2][1] / 2))
+    euclid = math.sqrt((center1[0]-center2[0])**2 + (center1[1]-center2[1])**2)
+    return round(euclid, 2)
+
+
+def bounded_area(items):
+    xs = []
+    ys = []
+
+    for corners in items.values():
+        for (x, y) in corners:
+            xs.append(x)
+            ys.append(y)
+
+    x_min = min(xs)
+    x_max = max(xs)
+    y_min = min(ys)
+    y_max = max(ys)
+
+    area = (x_max - x_min) * (y_max - y_min)
+
+    return area
+
+'''
+Register File → ALU
+Control Unit → ALU
+ALU → Cache
+Register File → Floating Unit
+Cache → Decoder
+Decoder → Floating Unit
+
+'''
+
+
+def breakdown(chromo):
+    size = [(5,5), (7,4), (4,4), (6,6), (5,3), (5,5)]
+    dict1 = {"alu": None, "cache": None, "control": None, "register": None, "decoder": None, "floating": None}
+    for i in range(len(chromo)):
+        bottom_left = chromo[i]
+        bottom_right = (chromo[i][0]+size[i][0], chromo[i][1])
+        top_left = (chromo[i][0], chromo[i][1]+size[i][1])
+        top_right = (chromo[i][0]+size[i][0], chromo[i][1]+size[i][1])
+        dict1[list(dict1.keys())[i]] = (bottom_left, bottom_right, top_left,top_right)
+    return dict1
+
+population = [
+    [(9,3), (12,15), (13,16), (1,13), (4,15), (9,6)],
+    [(8,0), (7,12), (4,11), (1,13), (14,10), (9,11)],
+    [(6,5), (12,9), (9,7), (8,6), (2,7), (3,1)],
+    [(3,11), (11,12), (14,11), (6,10), (3,11), (3,0)],
+    [(10,12), (8,16), (10,4), (13,6), (6,0), (3,7)],
+    [(0,2), (0,0), (14,12), (4,5), (12,4), (3,10)]
+]
+
+iteration = 15
+best = ga(population, 1000)
+
+print("Best chromosome:", best['chromo'])
+print(f"Fitness: {best['fitness']:.2f}")
+print(f"Wiring length: {best['wiring']:.2f}")
+print("Bounding box area:", best['area'])
+print("Overlap count:", best['overlap'])
