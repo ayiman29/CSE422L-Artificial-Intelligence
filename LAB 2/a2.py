@@ -1,7 +1,7 @@
 import math
 import random
 size_d = {"alu": (5,5), "cache": (7,4), "control": (4,4), "register": (6,6), "decoder": (5,3), "floating": (5,5)}
-def ga(population, iteration=15):
+def ga(population, iteration=1):
     best = None
     for i in range(iteration):
         fitness = f(population)
@@ -23,11 +23,15 @@ def ga(population, iteration=15):
         p2 = population[r2]
         p3 = population[r3]
         p4 = population[r4]
-        point = random.randint(1, len(p1) - 1)
-        c1 = p1[0:point] + p2[point::]
-        c2 = p2[0:point] + p1[point::]
-        c3 = p3[0:point] + p4[point::]
-        c4 = p4[0:point] + p3[point::]
+
+        #two_point
+        point1 = random.randint(1, len(p1)-2)
+        point2 = random.randint(point1+1, len(p1)-1)
+
+        c1 = p1[0:point1] + p2[point1:point2] + p1[point2::]
+        c2 = p2[0:point1] + p1[point1:point2] + p2[point2::]
+        c3 = p3[0:point1] + p4[point1:point2] + p3[point2::]
+        c4 = p4[0:point1] + p3[point1:point2] + p4[point2::]
         
         mutation_rate = 5  
 
@@ -50,15 +54,28 @@ def ga(population, iteration=15):
     return best
 
 
+def find_best(fitness_list):
+    best = None
+    second_best = None
+    max_fit = float('-inf')
+    second_max_fit = float('-inf')
 
+    for f in fitness_list:
+        fit = f['fitness']
+        if fit > max_fit:
+            second_best = best
+            second_max_fit = max_fit
+            best = f
+            max_fit = fit
+        elif fit > second_max_fit:
+            second_best = f
+            second_max_fit = fit
+
+    return best, second_best
 
 
 def f(population):
     fit = []
-    # ALU --> Cache --> Control Unit --> Register File --> Decoder --> Floating Unit
-    # (9,3), (12, 15), (13, 16), (1,13), (4,15), (9, 6)
-    #{"alu": (5,5), "cache": (7,4), "control": (4,4), "register": (6,6), "decoder": (5,3), "floating": (5,5)}
-
     for chromo in population:
         items = breakdown(chromo)
         wiring_dist = (
@@ -148,33 +165,6 @@ def bounded_area(items):
 
     return area
 
-'''
-Register File → ALU
-Control Unit → ALU
-ALU → Cache
-Register File → Floating Unit
-Cache → Decoder
-Decoder → Floating Unit
-
-'''
-def find_best(fitness_list):
-    best = None
-    second_best = None
-    max_fit = float('-inf')
-    second_max_fit = float('-inf')
-
-    for f in fitness_list:
-        fit = f['fitness']
-        if fit > max_fit:
-            second_best = best
-            second_max_fit = max_fit
-            best = f
-            max_fit = fit
-        elif fit > second_max_fit:
-            second_best = f
-            second_max_fit = fit
-
-    return best, second_best
 
 def breakdown(chromo):
     size = [(5,5), (7,4), (4,4), (6,6), (5,3), (5,5)]
@@ -197,7 +187,7 @@ population = [
 ]
 
 iteration = 15
-best = ga(population, 1000)
+best = ga(population, 15)
 
 print("Best chromosome:", best['chromo'])
 print(f"Fitness: {best['fitness']:.2f}")
