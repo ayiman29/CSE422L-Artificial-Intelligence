@@ -44,8 +44,8 @@ def ga(target, population, chars):
         if random.random() < rate / 100:
             ran = random.randint(0, len(c3) - 1)
             c3 = c3[:ran] + chr(random.choice(chars)) + c3[ran+1:]
-
-        population = [p1, p2, p3, p4] + population[:42] + [c1, c2, c3, c4]
+        rest = population[4:len(population)-4]
+        population = [p1, p2, p3, p4] + rest + [c1, c2, c3, c4]
 
 
 
@@ -72,7 +72,7 @@ chars = (
     [32]
 )
 population = []
-for i in range(50):
+for i in range(100):
     temp = ""
     for j in range(len(target)):
         temp += chr(random.choice(chars))
