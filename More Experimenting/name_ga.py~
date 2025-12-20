@@ -30,9 +30,8 @@ def ga(target, population, chars):
         print("Target:", target)
         print("======================================")
         if target in population:
+            print("FOUND PARENT:", p1, "IN GEN:", gen)
             print("Parents of the First Generation:", li)
-            print("FOUND PARENT:", p1)
-            print("Total generation:", gen)
             return 1
         c1 = p1[:sp] + p2[sp:]
         c2 = p2[:sp] + p1[sp:]
